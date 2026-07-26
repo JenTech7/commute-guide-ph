@@ -165,6 +165,56 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   color: var(--color-text-primary);
 }
 
+/* ------------------------------------------------------------------
+   MAP MARKERS (built as Leaflet divIcons in map.js — styled here)
+   ------------------------------------------------------------------ */
+
+/* User's live location: a solid blue dot with a soft pulsing ring */
+.user-location-marker {
+  position: relative;
+}
+.user-location-dot {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-primary-500);
+  border: 2px solid #fff;
+  box-shadow: var(--shadow-sm);
+  z-index: 2;
+}
+.user-location-pulse {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-primary-500);
+  opacity: 0.35;
+  animation: user-location-pulse 2s ease-out infinite;
+}
+@keyframes user-location-pulse {
+  0% { transform: scale(0.6); opacity: 0.45; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .user-location-pulse { animation: none; opacity: 0.2; }
+}
+
+/* Destination pin — a drop-style marker using Material Icons' "location_on" glyph */
+.destination-marker {
+  display: grid;
+  place-items: center;
+}
+.destination-marker .material-icons-round {
+  font-size: 36px;
+  color: var(--color-danger-500);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
 /* Search overlay, floating above the map */
 .search-overlay {
   position: absolute;
