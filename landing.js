@@ -82,10 +82,11 @@
       event.preventDefault();
       const query = heroSearchInput.value.trim();
       const destination = query.length > 0 ? query : '';
-      const url = destination
-        ? `home.html?dest=${encodeURIComponent(destination)}`
-        : 'home.html';
-      window.location.href = url;
+     const url = destination
+  ? `home.html?dest=${encodeURIComponent(destination)}&view=guide`
+  : 'home.html?view=guide';
+
+window.location.href = url;
     });
   }
 
