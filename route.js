@@ -200,8 +200,18 @@
   /* ==================================================================
      5. RENDERING
      ================================================================== */
-  function renderTrip(trip) {
-    els.guideDestinationName.textContent = trip.destination.name;
+function renderTrip(trip) {
+
+  // Show guide panel after destination is selected
+  if (els.guideEmptyState) {
+    els.guideEmptyState.hidden = true;
+  }
+
+  if (els.guideContent) {
+    els.guideContent.hidden = false;
+  }
+
+  els.guideDestinationName.textContent = trip.destination.name;
 
     els.summaryFare.textContent = `\u20B1${trip.totals.fare}`;
     els.summaryTime.textContent = `${trip.totals.timeMin} min`;
