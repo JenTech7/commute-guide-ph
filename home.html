@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Commute Guide PH — Find Your Route</title>
+  <meta name="description" content="Search a destination and get step-by-step Philippine commuting directions." />
+
+  <!-- Fonts (same system as landing page, for visual consistency) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
+
+  <!-- Leaflet.js (map library) — CSS must load before our own CSS so we can override safely -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin="" />
+
+  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/home.css" />
+</head>
+<body class="home-body">
+
+  <!-- ============ TOP APP BAR ============ -->
+  <header class="app-bar">
+    <a href="index.html" class="app-bar-brand" aria-label="Commute Guide PH home">
+      <span class="brand-mark" aria-hidden="true"><span class="brand-mark-dot"></span></span>
+      <span class="app-bar-brand-name">Commute Guide <span class="brand-ph">PH</span></span>
+    </a>
+
+    <div class="app-bar-actions">
+      <button id="savedPlacesBtn" class="icon-btn" type="button" aria-label="Saved places" aria-expanded="false" aria-controls="savedPlacesDrawer">
+        <span class="material-icons-round" aria-hidden="true">bookmark</span>
+      </button>
+      <button id="darkModeToggle" class="icon-btn" type="button" aria-label="Toggle dark mode">
+        <span class="material-icons-round" aria-hidden="true">dark_mode</span>
+      </button>
+      <button id="signInBtn" class="btn btn-primary btn-sm" type="button">
+        Sign in
+      </button>
+    </div>
+  </header>
+
+  <!-- ============ MAIN APP LAYOUT ============ -->
+  <main class="app-layout">
+
+    <!-- -------- MAP COLUMN -------- -->
+    <section class="map-column" aria-label="Map">
+
+      <!-- Search overlay, floats on top of the map -->
+      <div class="search-overlay glass-card">
+        <form id="searchForm" class="search-bar" role="search" autocomplete="off">
+          <span class="material-icons-round search-bar-icon" aria-hidden="true">search</span>
+          <input
+            type="text"
+            id="searchInput"
+            class="search-bar-input"
+            placeholder="Search destination..."
+            aria-label="Search destination"
+            aria-autocomplete="list"
+            aria-controls="searchSuggestions"
+            aria-expanded="false"
+          />
+          <button type="button" id="clearSearchBtn" class="icon-btn icon-btn-ghost" aria-label="Clear search" hidden>
+            <span class="material-icons-round" aria-hidden="true">close</span>
+          </button>
+        </form>
+
+        <!-- Autocomplete suggestions — populated by map.js. Empty/hidden until there are results. -->
+        <ul id="searchSuggestions" class="search-suggestions" role="listbox" hidden></ul>
+      </div>
+
+      <!-- Recent searches quick-access chips, shown when search is empty and focused -->
+      <div id="recentSearchesRow" class="recent-searches-row" hidden>
+        <span class="recent-searches-label">Recent</span>
+        <ul id="recentSearchesList" class="recent-searches-list"></ul>
+      </div>
+
+      <!-- The Leaflet map mounts here -->
+      <div id="map" class="map-canvas" role="application" aria-label="Interactive commute map"></div>
+
+      <!-- Floating action buttons over the map -->
+      <div class="map-fab-stack">
+        <button id="locateBtn" class="fab" type="button" aria-label="Use my current location">
+          <span class="material-icons-round" aria-hidden="true">my_location</span>
+        </button>
+      </div>
+
+      <!-- Saved places drawer (slides in from left on desktop, sheet on mobile) -->
+      <aside id="savedPlacesDrawer" class="saved-places-drawer glass-card" hidden aria-label="Saved places">
+        <div class="drawer-header">
+          <h2>Saved places</h2>
+          <button id="closeSavedPlacesBtn" class="icon-btn icon-btn-ghost" type="button" aria-label="Close saved places">
+            <span class="material-icons-round" aria-hidden="true">close</span>
+          </button>
+        </div>
+        <ul id="savedPlacesList" class="saved-places-list">
+          <!-- Populated by saved-routes.js (future file). Static examples below as placeholders/fallback. -->
+          <li class="saved-place-item" data-place="Home">
+            <span class="material-icons-round" aria-hidden="true">home</span>
+            <span>Home</span>
+          </li>
+          <li class="saved-place-item" data-place="Work">
+            <span class="material-icons-round" aria-hidden="true">work</span>
+            <span>Work</span>
+          </li>
+          <li class="saved-place-item" data-place="School">
+            <span class="material-icons-round" aria-hidden="true">school</span>
+            <span>School</span>
+          </li>
+        </ul>
+        <button id="addSavedPlaceBtn" class="btn btn-outline btn-sm" type="button">
+          <span class="material-icons-round" aria-hidden="true">add</span>
+          Add current destination
+        </button>
+      </aside>
+    </section>
+
+    <!-- -------- COMMUTE GUIDE PANEL -------- -->
+    <!-- Right-side panel on desktop, bottom sheet on mobile (handled in home.css). -->
+    <aside id="guidePanel" class="guide-panel" aria-label="Commute guide">
+
+      <!-- Collapsed/empty state — shown before a destination is picked -->
+      <div id="guideEmptyState" class="guide-empty-state">
+        <span class="material-icons-round" aria-hidden="true">alt_route</span>
+        <h2>Where are you headed?</h2>
+        <p>Search a destination and we'll map out exactly how to get there — jeep, tricycle, bus, or train.</p>
+      </div>
+
+      <!-- Populated state — shown once a destination is selected -->
+      <div id="guideContent" class="guide-content" hidden>
+
+        <!-- Drag handle, mobile only, for the bottom sheet -->
+        <button id="sheetDragHandle" class="sheet-drag-handle" type="button" aria-label="Expand or collapse guide panel">
+          <span class="sheet-drag-handle-bar" aria-hidden="true"></span>
+        </button>
+
+        <div class="guide-panel-header">
+          <div>
+            <span class="guide-panel-label">To</span>
+            <h2 id="guideDestinationName">SM Calamba</h2>
+          </div>
+          <button id="closeGuideBtn" class="icon-btn icon-btn-ghost" type="button" aria-label="Close guide">
+            <span class="material-icons-round" aria-hidden="true">close</span>
+          </button>
+        </div>
+
+        <!-- Trip summary strip: total fare / time / distance -->
+        <div class="guide-summary">
+          <div class="guide-summary-item">
+            <span class="material-icons-round" aria-hidden="true">payments</span>
+            <div>
+              <strong id="summaryFare">₱28</strong>
+              <span>Total fare</span>
+            </div>
+          </div>
+          <div class="guide-summary-item">
+            <span class="material-icons-round" aria-hidden="true">schedule</span>
+            <div>
+              <strong id="summaryTime">35 min</strong>
+              <span>Est. time</span>
+            </div>
+          </div>
+          <div class="guide-summary-item">
+            <span class="material-icons-round" aria-hidden="true">route</span>
+            <div>
+              <strong id="summaryDistance">4.2 km</strong>
+              <span>Distance</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress bar — fills as the user advances through steps during an active guide -->
+        <div class="guide-progress-track" role="progressbar" aria-label="Trip progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div id="guideProgressFill" class="guide-progress-fill"></div>
+        </div>
+
+        <!-- Current + next step highlight cards -->
+        <div class="guide-active-steps">
+          <div id="currentStepCard" class="guide-step-card guide-step-card-current">
+            <span class="guide-step-badge">Current step</span>
+            <div class="guide-step-card-body">
+              <span class="material-icons-round guide-step-icon" aria-hidden="true">directions_walk</span>
+              <div>
+                <p id="currentStepText">Walk 100 meters to Balibago Jeep Terminal</p>
+                <div class="guide-step-meta">
+                  <span><span class="material-icons-round" aria-hidden="true">straighten</span> 100 m</span>
+                  <span><span class="material-icons-round" aria-hidden="true">schedule</span> 2 min</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="nextStepCard" class="guide-step-card guide-step-card-next">
+            <span class="guide-step-badge">Next</span>
+            <div class="guide-step-card-body">
+              <span class="material-icons-round guide-step-icon" aria-hidden="true">airport_shuttle</span>
+              <div>
+                <p id="nextStepText">Ride a Balibago - Crossing Jeep</p>
+                <div class="guide-step-meta">
+                  <span><span class="material-icons-round" aria-hidden="true">payments</span> ₱15</span>
+                  <span><span class="material-icons-round" aria-hidden="true">schedule</span> 20 min</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Full step-by-step list, scrollable -->
+        <ol id="stepsList" class="steps-list" aria-label="All commute steps">
+          <!-- Populated dynamically by route.js (future file). One placeholder step shown as a layout reference. -->
+          <li class="step-list-item is-active" data-step-index="0">
+            <span class="step-list-icon material-icons-round" aria-hidden="true">directions_walk</span>
+            <div class="step-list-body">
+              <p>Walk 100 meters to Balibago Jeep Terminal</p>
+              <span class="step-list-meta">100 m · 2 min</span>
+            </div>
+          </li>
+        </ol>
+
+        <!-- Action bar: Start Guide + voice toggle -->
+        <div class="guide-actions">
+          <button id="voiceToggleBtn" class="icon-btn icon-btn-outline" type="button" aria-pressed="false" aria-label="Toggle voice guidance">
+            <span class="material-icons-round" aria-hidden="true">volume_up</span>
+          </button>
+          <button id="startGuideBtn" class="btn btn-primary btn-large guide-start-btn" type="button">
+            <span class="material-icons-round" aria-hidden="true">navigation</span>
+            Start Guide
+          </button>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Leaflet.js library -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+          crossorigin=""></script>
+
+  <!-- App scripts -->
+  <script src="js/map.js"></script>
+  <!-- js/route.js and js/voice.js are added here once those files are built -->
+</body>
+</html>
