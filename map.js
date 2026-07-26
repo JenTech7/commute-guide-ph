@@ -508,12 +508,25 @@
      10. HANDLE ?dest= QUERY PARAM (from the landing page hero search)
      ================================================================== */
   const urlParams = new URLSearchParams(window.location.search);
-  const destParam = urlParams.get('dest');
-  if (destParam) {
-    els.searchInput.value = destParam;
-    fetchSuggestions(destParam).then(() => {
-      // Auto-select the top result so the redirect feels seamless
-      if (currentSuggestions[0]) selectSuggestion(currentSuggestions[0]);
-    });
-  }
+const destParam = urlParams.get('dest');
+const viewParam = urlParams.get('view');
+
+if (destParam) {
+  els.searchInput.value = destParam;
+
+  fetchSuggestions(destParam).then(() => {
+    if (currentSuggestions[0]) {
+      selectSuggestion(currentSuggestions[0]);
+
+      // Open guide automatically when coming from landing page
+      if (viewParam === 'guide') {
+        setTimeout(() => {
+          if (els.guidePanel) {
+            els.guidePanel.classList.add('is-expanded');
+          }
+        }, 500);
+      }
+    }
+  });
+}
 })();
