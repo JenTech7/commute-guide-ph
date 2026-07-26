@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Commute Guide PH — Get There the Local Way</title>
+  <meta name="description" content="Step-by-step Philippine commuting directions — jeepneys, tricycles, buses, and trains — not just a route line on a map." />
+
+  <!-- Fonts: Sora for display (rounded, friendly, geometric — reads well at jeepney-signage scale), Inter for body/UI, JetBrains Mono for fares/times (utility face) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/landing.css" />
+</head>
+<body>
+
+  <!-- ============ NAV ============ -->
+  <header class="site-nav">
+    <div class="nav-inner">
+      <a href="#top" class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <span class="brand-mark-dot"></span>
+        </span>
+        <span class="brand-name">Commute Guide <span class="brand-ph">PH</span></span>
+      </a>
+
+      <nav class="nav-links" aria-label="Primary">
+        <a href="#how-it-works">How it works</a>
+        <a href="#features">Features</a>
+        <a href="#transport-types">Transport</a>
+      </nav>
+
+      <div class="nav-actions">
+        <button id="darkModeToggle" class="icon-btn" type="button" aria-label="Toggle dark mode">
+          <span class="material-icons-round" aria-hidden="true">dark_mode</span>
+        </button>
+        <a href="home.html" class="btn btn-primary">Open App</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+
+    <!-- ============ HERO ============ -->
+    <section class="hero">
+      <!-- Animated map background: dot-grid roads + traveling route line, built in landing.js via canvas -->
+      <canvas id="heroMapCanvas" class="hero-map-canvas" aria-hidden="true"></canvas>
+      <div class="hero-gradient-overlay" aria-hidden="true"></div>
+
+      <div class="hero-inner">
+        <div class="eyebrow">
+          <span class="eyebrow-dot"></span>
+          Built for how Filipinos actually commute
+        </div>
+
+        <h1 class="hero-title">
+          GPS tells you the road.<br />
+          We tell you the <span class="hero-title-accent">jeep to ride</span>.
+        </h1>
+
+        <p class="hero-subtitle">
+          Search any destination and get real step-by-step commuting instructions —
+          which jeepney, tricycle, bus, or train to take, exact fares, and where to get off.
+        </p>
+
+        <form class="hero-search glass-card" id="heroSearchForm" role="search">
+          <span class="material-icons-round hero-search-icon" aria-hidden="true">near_me</span>
+          <input
+            type="text"
+            id="heroSearchInput"
+            class="hero-search-input"
+            placeholder="Search destination... e.g. SM Calamba"
+            autocomplete="off"
+            aria-label="Search destination"
+          />
+          <button type="submit" class="btn btn-primary hero-search-btn">
+            Guide me
+            <span class="material-icons-round" aria-hidden="true">arrow_forward</span>
+          </button>
+        </form>
+
+        <div class="hero-stats" aria-label="Sample commute preview">
+          <div class="hero-stat glass-card">
+            <span class="material-icons-round" aria-hidden="true">directions_walk</span>
+            <div>
+              <strong>7</strong>
+              <span>steps to SM Calamba</span>
+            </div>
+          </div>
+          <div class="hero-stat glass-card">
+            <span class="material-icons-round" aria-hidden="true">payments</span>
+            <div>
+              <strong>₱28</strong>
+              <span>total fare</span>
+            </div>
+          </div>
+          <div class="hero-stat glass-card">
+            <span class="material-icons-round" aria-hidden="true">schedule</span>
+            <div>
+              <strong>~35 min</strong>
+              <span>estimated time</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HOW IT WORKS ============ -->
+    <section id="how-it-works" class="section how-it-works">
+      <div class="section-inner">
+        <span class="section-eyebrow">The trip, broken into rides</span>
+        <h2 class="section-title">One destination in, a full commute out</h2>
+
+        <div class="flow-track" role="list">
+          <div class="flow-step glass-card" role="listitem">
+            <span class="flow-step-icon material-icons-round" aria-hidden="true">my_location</span>
+            <h3>Allow location</h3>
+            <p>We find your nearest jeepney terminal, tricycle stop, or station — not just your GPS coordinates.</p>
+          </div>
+          <div class="flow-connector" aria-hidden="true"></div>
+          <div class="flow-step glass-card" role="listitem">
+            <span class="flow-step-icon material-icons-round" aria-hidden="true">search</span>
+            <h3>Search destination</h3>
+            <p>Type where you're headed. We pin it and check what actually runs there.</p>
+          </div>
+          <div class="flow-connector" aria-hidden="true"></div>
+          <div class="flow-step glass-card" role="listitem">
+            <span class="flow-step-icon material-icons-round" aria-hidden="true">alt_route</span>
+            <h3>Get your commute</h3>
+            <p>Walk, ride, transfer, ride again — each leg with fare, time, and exactly where to get off.</p>
+          </div>
+          <div class="flow-connector" aria-hidden="true"></div>
+          <div class="flow-step glass-card" role="listitem">
+            <span class="flow-step-icon material-icons-round" aria-hidden="true">volume_up</span>
+            <h3>Follow along</h3>
+            <p>Voice guidance walks you through it live, step by step, ride by ride.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FEATURES ============ -->
+    <section id="features" class="section features">
+      <div class="section-inner">
+        <span class="section-eyebrow">Made for the actual trip</span>
+        <h2 class="section-title">Everything a commute needs, nothing it doesn't</h2>
+
+        <div class="feature-grid">
+          <div class="feature-card glass-card">
+            <span class="material-icons-round" aria-hidden="true">map</span>
+            <h3>Live interactive map</h3>
+            <p>OpenStreetMap-powered, with your live position and the full route drawn out.</p>
+          </div>
+          <div class="feature-card glass-card">
+            <span class="material-icons-round" aria-hidden="true">record_voice_over</span>
+            <h3>Voice guidance</h3>
+            <p>Spoken directions for every leg, so you can keep your eyes on the road, not the screen.</p>
+          </div>
+          <div class="feature-card glass-card">
+            <span class="material-icons-round" aria-hidden="true">bookmark</span>
+            <h3>Saved places</h3>
+            <p>Home, school, work, the mall — save your regular stops for one-tap directions.</p>
+          </div>
+          <div class="feature-card glass-card">
+            <span class="material-icons-round" aria-hidden="true">history</span>
+            <h3>Recent searches</h3>
+            <p>Pick up right where you left off, even after closing the app.</p>
+          </div>
+          <div class="feature-card glass-card">
+            <span class="material-icons-round" aria-hidden="true">groups</span>
+            <h3>Community routes</h3>
+            <p>Commuters submit and rate routes, so the guide gets more accurate over time.</p>
+          </div>
+          <div class="feature-card glass-card">
+            <span class="material-icons-round" aria-hidden="true">flag</span>
+            <h3>Report an issue</h3>
+            <p>Route changed or terminal moved? Flag it in one tap and help the next commuter.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TRANSPORT TYPES ============ -->
+    <section id="transport-types" class="section transport-types">
+      <div class="section-inner">
+        <span class="section-eyebrow">However you actually get there</span>
+        <h2 class="section-title">Every ride, covered</h2>
+
+        <div class="transport-chip-row" role="list">
+          <span class="transport-chip glass-card" role="listitem"><span class="material-icons-round" aria-hidden="true">directions_walk</span>Walking</span>
+          <span class="transport-chip glass-card" role="listitem"><span class="material-icons-round" aria-hidden="true">airport_shuttle</span>Jeepney</span>
+          <span class="transport-chip glass-card" role="listitem"><span class="material-icons-round" aria-hidden="true">directions_bus</span>Bus</span>
+          <span class="transport-chip glass-card" role="listitem"><span class="material-icons-round" aria-hidden="true">airport_shuttle</span>Van (UV Express)</span>
+          <span class="transport-chip glass-card" role="listitem"><span class="material-icons-round" aria-hidden="true">two_wheeler</span>Tricycle</span>
+          <span class="transport-chip glass-card" role="listitem"><span class="material-icons-round" aria-hidden="true">pedal_bike</span>Pedicab</span>
+          <span class="transport-chip glass-card" role="listitem"><span class="material-icons-round" aria-hidden="true">tram</span>MRT</span>
+          <span class="transport-chip glass-card" role="listitem"><span class="material-icons-round" aria-hidden="true">tram</span>LRT</span>
+          <span class="transport-chip glass-card" role="listitem"><span class="material-icons-round" aria-hidden="true">train</span>PNR</span>
+          <span class="transport-chip glass-card" role="listitem"><span class="material-icons-round" aria-hidden="true">local_taxi</span>Taxi</span>
+          <span class="transport-chip glass-card" role="listitem"><span class="material-icons-round" aria-hidden="true">directions_car</span>Grab</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FINAL CTA ============ -->
+    <section class="section final-cta">
+      <div class="section-inner final-cta-inner glass-card">
+        <h2>Your next ride is a search away.</h2>
+        <p>No app download. No account required to start. Just open and search.</p>
+        <a href="home.html" class="btn btn-primary btn-large">
+          Start Commuting
+          <span class="material-icons-round" aria-hidden="true">arrow_forward</span>
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="section-inner footer-inner">
+      <span>© 2026 Commute Guide PH — Community-powered commuting directions.</span>
+      <div class="footer-links">
+        <a href="admin.html">Admin</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/landing.js"></script>
+</body>
+</html>
