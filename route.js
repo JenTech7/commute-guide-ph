@@ -210,7 +210,11 @@ function renderTrip(trip) {
   if (els.guideContent) {
     els.guideContent.hidden = false;
   }
-
+   
+if (els.guidePanel) {
+  els.guidePanel.classList.add('is-expanded');
+}
+   
   els.guideDestinationName.textContent = trip.destination.name;
 
     els.summaryFare.textContent = `\u20B1${trip.totals.fare}`;
