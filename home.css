@@ -1,0 +1,581 @@
+/* ==========================================================================
+   COMMUTE GUIDE PH — HOME / MAP SCREEN STYLES
+   Consumes variables.css tokens. Reuses .glass-card, .btn, .icon-btn,
+   .brand-mark etc. from the shared component patterns established in
+   landing.css (redeclared minimally here since home.html doesn't load
+   landing.css, to keep each page's CSS payload scoped to what it needs).
+   ========================================================================== */
+
+/* ------------------------------------------------------------------
+   RESET & BASE (same baseline as landing.css — duplicated here on
+   purpose so home.html doesn't need to load landing.css at all)
+   ------------------------------------------------------------------ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body.home-body {
+  font-family: var(--font-body);
+  color: var(--color-text-primary);
+  background: var(--color-bg);
+  height: 100vh;
+  overflow: hidden; /* app shell — map and panel manage their own scroll */
+  display: flex;
+  flex-direction: column;
+}
+
+img, svg, canvas { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+
+a:focus-visible, button:focus-visible, input:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ------------------------------------------------------------------
+   SHARED COMPONENTS (glass card, buttons, icon buttons, brand mark)
+   ------------------------------------------------------------------ */
+.glass-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow: var(--shadow-md);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-full);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+.btn:hover { transform: translateY(-1px); }
+.btn-primary { background: var(--gradient-primary); color: #fff; box-shadow: var(--shadow-glow-primary); }
+.btn-sm { padding: var(--space-2) var(--space-4); font-size: var(--text-xs); }
+.btn-large { padding: var(--space-4) var(--space-6); font-size: var(--text-base); width: 100%; }
+.btn-outline {
+  background: transparent;
+  border: 1.5px solid var(--color-border);
+  color: var(--color-text-primary);
+}
+.btn-outline:hover { border-color: var(--color-primary-500); color: var(--color-primary-600); }
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-full);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  flex-shrink: 0;
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+}
+.icon-btn:hover { background: var(--color-primary-500); color: #fff; }
+.icon-btn-ghost { background: transparent; border: none; width: 34px; height: 34px; }
+.icon-btn-ghost:hover { background: var(--color-border); color: var(--color-text-primary); }
+.icon-btn-outline { background: transparent; border: 1.5px solid var(--color-border); }
+.icon-btn-outline[aria-pressed="true"] {
+  background: var(--color-accent-500);
+  border-color: var(--color-accent-500);
+  color: #fff;
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background: var(--gradient-primary);
+}
+.brand-mark-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color-accent-400);
+}
+.brand-ph { color: var(--color-accent-500); }
+
+/* ------------------------------------------------------------------
+   APP BAR
+   ------------------------------------------------------------------ */
+.app-bar {
+  height: var(--nav-height);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: var(--space-6);
+  background: var(--color-bg-elevated);
+  border-bottom: 1px solid var(--color-border);
+  z-index: var(--z-nav);
+}
+
+.app-bar-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-family: var(--font-display);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--text-base);
+}
+
+.app-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* ------------------------------------------------------------------
+   APP LAYOUT — map column + guide panel, side by side on desktop
+   ------------------------------------------------------------------ */
+.app-layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  min-height: 0; /* required for children to scroll within a flex/grid parent */
+}
+
+/* ------------------------------------------------------------------
+   MAP COLUMN
+   ------------------------------------------------------------------ */
+.map-column {
+  position: relative;
+  min-height: 0;
+}
+
+.map-canvas {
+  width: 100%;
+  height: 100%;
+  background: var(--color-border); /* visible placeholder tone before Leaflet tiles load */
+}
+
+/* Leaflet attribution/zoom controls should respect dark mode legibility */
+[data-theme="dark"] .leaflet-control-attribution,
+[data-theme="dark"] .leaflet-control-zoom a {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+/* Search overlay, floating above the map */
+.search-overlay {
+  position: absolute;
+  top: var(--space-4);
+  left: var(--space-4);
+  right: var(--space-4);
+  z-index: var(--z-panel);
+  padding: var(--space-2);
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-inline: var(--space-3);
+}
+
+.search-bar-icon { color: var(--color-text-muted); flex-shrink: 0; }
+
+.search-bar-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: var(--text-base);
+  padding-block: var(--space-3);
+  color: var(--color-text-primary);
+}
+.search-bar-input:focus { outline: none; }
+.search-bar-input::placeholder { color: var(--color-text-muted); }
+
+/* Autocomplete suggestions dropdown */
+.search-suggestions {
+  list-style: none;
+  border-top: 1px solid var(--color-border);
+  margin-top: var(--space-2);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.search-suggestions li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.search-suggestions li:hover,
+.search-suggestions li.is-highlighted {
+  background: var(--color-border);
+}
+
+.search-suggestions li .material-icons-round {
+  color: var(--color-text-muted);
+  font-size: 20px;
+}
+
+.search-suggestions li .suggestion-secondary {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+/* Recent searches row */
+.recent-searches-row {
+  position: absolute;
+  top: calc(var(--space-4) + 68px);
+  left: var(--space-4);
+  right: var(--space-4);
+  z-index: var(--z-panel);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  overflow-x: auto;
+}
+
+.recent-searches-label {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.recent-searches-list {
+  list-style: none;
+  display: flex;
+  gap: var(--space-2);
+}
+
+.recent-searches-list li {
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(var(--glass-blur));
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* Floating action buttons over the map */
+.map-fab-stack {
+  position: absolute;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: var(--z-panel);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.fab {
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-elevated);
+  box-shadow: var(--shadow-lg);
+  transition: transform var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
+}
+.fab:hover { transform: translateY(-2px); background: var(--color-primary-500); color: #fff; }
+.fab.is-active { background: var(--gradient-primary); color: #fff; }
+
+/* Saved places drawer */
+.saved-places-drawer {
+  position: absolute;
+  top: var(--space-4);
+  left: var(--space-4);
+  bottom: var(--space-4);
+  width: 300px;
+  z-index: var(--z-modal);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  overflow-y: auto;
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.drawer-header h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+}
+
+.saved-places-list { list-style: none; display: flex; flex-direction: column; gap: var(--space-2); }
+
+.saved-place-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+.saved-place-item:hover { background: var(--color-border); }
+.saved-place-item .material-icons-round { color: var(--color-primary-600); }
+
+/* ------------------------------------------------------------------
+   GUIDE PANEL (right side on desktop)
+   ------------------------------------------------------------------ */
+.guide-panel {
+  background: var(--color-bg-elevated);
+  border-left: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.guide-empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-10);
+  color: var(--color-text-secondary);
+}
+.guide-empty-state .material-icons-round {
+  font-size: 40px;
+  color: var(--color-primary-400);
+  margin-bottom: var(--space-4);
+}
+.guide-empty-state h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-2);
+}
+.guide-empty-state p { font-size: var(--text-sm); line-height: var(--line-height-relaxed); max-width: 260px; }
+
+.guide-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-5);
+}
+
+.sheet-drag-handle {
+  display: none; /* shown only on mobile bottom sheet, see media query below */
+  width: 100%;
+  padding-block: var(--space-2);
+  justify-content: center;
+}
+.sheet-drag-handle-bar {
+  width: 40px;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+}
+
+.guide-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.guide-panel-label {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--space-1);
+}
+.guide-panel-header h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+}
+
+/* Summary strip */
+.guide-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+}
+.guide-summary-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+}
+.guide-summary-item .material-icons-round { color: var(--color-accent-500); font-size: 18px; }
+.guide-summary-item strong { display: block; font-family: var(--font-mono); font-size: var(--text-sm); }
+.guide-summary-item span { font-size: 10px; color: var(--color-text-muted); }
+
+/* Progress bar */
+.guide-progress-track {
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+  overflow: hidden;
+}
+.guide-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--gradient-primary);
+  border-radius: var(--radius-full);
+  transition: width var(--duration-slow) var(--ease-standard);
+}
+
+/* Current / next step highlight cards */
+.guide-active-steps { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.guide-step-card {
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+}
+.guide-step-card-current {
+  background: var(--gradient-primary);
+  border: none;
+  color: #fff;
+}
+.guide-step-card-current .guide-step-meta,
+.guide-step-card-current .guide-step-badge { color: rgba(255,255,255,0.8); }
+.guide-step-card-next { background: var(--color-bg); }
+
+.guide-step-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.guide-step-card-body { display: flex; align-items: flex-start; gap: var(--space-3); }
+.guide-step-icon { font-size: 22px; flex-shrink: 0; }
+.guide-step-card-body p { font-size: var(--text-sm); font-weight: var(--font-weight-medium); margin-bottom: var(--space-2); }
+
+.guide-step-meta {
+  display: flex;
+  gap: var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+.guide-step-meta span { display: inline-flex; align-items: center; gap: 4px; }
+.guide-step-meta .material-icons-round { font-size: 14px; }
+
+/* Full steps list */
+.steps-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.step-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  opacity: 0.55;
+  transition: opacity var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
+}
+.step-list-item.is-active {
+  opacity: 1;
+  background: var(--color-bg);
+}
+.step-list-item.is-complete {
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+.step-list-icon {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.step-list-body p { font-size: var(--text-sm); }
+.step-list-meta { font-size: var(--text-xs); color: var(--color-text-muted); }
+
+/* Action bar */
+.guide-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.guide-start-btn { flex: 1; }
+
+/* ==========================================================================
+   RESPONSIVE — bottom sheet layout on mobile
+   ========================================================================== */
+@media (max-width: 860px) {
+  .app-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+    position: relative;
+  }
+
+  .map-column { height: 100%; }
+
+  /* Guide panel becomes a bottom sheet that overlays the map */
+  .guide-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-height: 40%;
+    border-left: none;
+    border-top: 1px solid var(--color-border);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    box-shadow: var(--shadow-lg);
+    z-index: var(--z-panel);
+    transition: max-height var(--duration-normal) var(--ease-standard);
+  }
+
+  /* Expanded state, toggled by JS via this class when the drag handle is tapped */
+  .guide-panel.is-expanded { max-height: 85%; }
+
+  .sheet-drag-handle { display: flex; }
+
+  .guide-empty-state { padding: var(--space-6); }
+  .guide-empty-state .material-icons-round { font-size: 28px; margin-bottom: var(--space-2); }
+
+  .steps-list { max-height: 140px; }
+
+  .saved-places-drawer {
+    left: var(--space-3);
+    right: var(--space-3);
+    width: auto;
+    top: var(--space-3);
+    bottom: var(--space-3);
+  }
+}
+
+@media (max-width: 480px) {
+  .app-bar { padding-inline: var(--space-4); }
+  .app-bar-brand-name { display: none; } /* icon mark alone is enough at this width */
+  .guide-summary { grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+  .guide-summary-item { padding: var(--space-2); }
+}
