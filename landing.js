@@ -82,7 +82,7 @@
       event.preventDefault();
       const query = heroSearchInput.value.trim();
       const destination = query.length > 0 ? query : '';
-     const url = destination
+ const url = destination
   ? `home.html?dest=${encodeURIComponent(destination)}&view=guide`
   : 'home.html?view=guide';
 
