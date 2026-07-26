@@ -629,3 +629,19 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   .guide-summary { grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
   .guide-summary-item { padding: var(--space-2); }
 }
+@media (max-width: 768px) {
+
+  .app-layout {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .guide-panel {
+    order: 1;
+  }
+
+  .map-column {
+    order: 2;
+  }
+
+}
