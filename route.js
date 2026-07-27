@@ -320,25 +320,39 @@
     return getCurrentTrip();
   }
 
-  function startGuide() {
+function startGuide() {
+
     if (!state.currentTrip) {
-      console.warn("[CGPH_ROUTE] No route selected. Call selectRoute(routeId) first.");
-      return;
+
+        if (state.routes.length > 0) {
+
+            state.currentTrip = {
+                route: state.routes[0],
+                steps: buildStepsFromRoute(state.routes[0]),
+                currentStepIndex: -1
+            };
+
+        } else {
+            console.warn("No route selected");
+            return;
+        }
     }
 
-    // Reset to the beginning in case startGuide() is called again.
+
     state.currentTrip.currentStepIndex = -1;
 
+
     document.dispatchEvent(
-      new CustomEvent("cgph:guideStarted", {
-        detail: {
-          fare: state.currentTrip.route.totalFare,
-          route: state.currentTrip.route
-        }
-      })
+        new CustomEvent("cgph:guideStarted", {
+            detail: {
+                fare: state.currentTrip.route.totalFare,
+                route: state.currentTrip.route
+            }
+        })
     );
 
-    nextStep(); // advance to step 0 and render/announce it
+
+    nextStep();
   }
 
   function nextStep() {
