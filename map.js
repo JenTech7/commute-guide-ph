@@ -519,13 +519,14 @@ if (destParam) {
       selectSuggestion(currentSuggestions[0]);
 
       // Open guide automatically when coming from landing page
-      if (viewParam === 'guide') {
-        setTimeout(() => {
-          if (els.guidePanel) {
-            els.guidePanel.classList.add('is-expanded');
-          }
-        }, 500);
-      }
+   if (viewParam === 'guide') {
+  setTimeout(() => {
+    if (els.guidePanel) {
+      els.guidePanel.classList.add('is-expanded');
+      document.body.classList.add('guide-first');
+    }
+  }, 500);
+}
     }
   });
 }
