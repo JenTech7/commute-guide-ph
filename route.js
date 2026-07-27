@@ -454,8 +454,6 @@ function startGuide() {
 
     dispatchGuideEvent('cgph:guideStarted');
   }
-    startAutoGuide();
-  let autoGuideTimer = null;
 
 
 
