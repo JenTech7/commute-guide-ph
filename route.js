@@ -450,7 +450,42 @@ currentTrip = {
 
     dispatchGuideEvent('cgph:guideStarted');
   }
+    startAutoGuide();
+  let autoGuideTimer = null;
 
+
+function startAutoGuide() {
+
+  if (autoGuideTimer) {
+    clearInterval(autoGuideTimer);
+  }
+
+
+  autoGuideTimer = setInterval(() => {
+
+    if (!currentTrip || !currentTrip.guideActive) {
+      clearInterval(autoGuideTimer);
+      return;
+    }
+
+
+    if (
+      currentTrip.currentStepIndex <
+      currentTrip.steps.length - 1
+    ) {
+
+      nextStep();
+
+    } else {
+
+      clearInterval(autoGuideTimer);
+
+    }
+
+
+  }, 5000); // every 5 seconds
+
+}
   function nextStep() {
     if (!currentTrip || !currentTrip.guideActive) {
       console.warn('[route.js] nextStep() called before the guide was started.');
