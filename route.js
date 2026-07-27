@@ -614,13 +614,31 @@
     showOptionsPanel();
   }
 
-  function wireStepGuideButtons() {
-    const nextBtn = document.getElementById(CONFIG.ui.nextStepBtn);
-    if (nextBtn) nextBtn.addEventListener("click", nextStep);
+function wireStepGuideButtons() {
 
-    const backBtn = document.getElementById(CONFIG.ui.backToOptionsBtn);
-    if (backBtn) backBtn.addEventListener("click", backToOptions);
+  const startBtn = document.getElementById("startGuideBtn");
+
+  if (startBtn) {
+    startBtn.addEventListener("click", () => {
+      startGuide();
+    });
   }
+
+
+  const nextBtn = document.getElementById(CONFIG.ui.nextStepBtn);
+
+  if (nextBtn) {
+    nextBtn.addEventListener("click", nextStep);
+  }
+
+
+  const backBtn = document.getElementById(CONFIG.ui.backToOptionsBtn);
+
+  if (backBtn) {
+    backBtn.addEventListener("click", backToOptions);
+  }
+
+}
 
   /* ----------------------------------------------------------
      12. INITIALIZATION
