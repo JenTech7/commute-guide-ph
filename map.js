@@ -514,20 +514,21 @@ const viewParam = urlParams.get('view');
 if (destParam) {
   els.searchInput.value = destParam;
 
-  fetchSuggestions(destParam).then(() => {
-    if (currentSuggestions[0]) {
-      selectSuggestion(currentSuggestions[0]);
+fetchSuggestions(destParam).then(() => {
+  if (currentSuggestions[0]) {
+    selectSuggestion(currentSuggestions[0]);
 
-      // Open guide automatically when coming from landing page
-   if (viewParam === 'guide') {
-  setTimeout(() => {
-    if (els.guidePanel) {
-      els.guidePanel.classList.add('is-expanded');
-      document.body.classList.add('guide-first');
+    // Open guide automatically when coming from landing page
+    if (viewParam === 'guide') {
+      setTimeout(() => {
+        if (els.guidePanel) {
+          els.guidePanel.classList.add('is-expanded');
+        }
+
+        document.body.classList.add('guide-first');
+
+      }, 500);
     }
-  }, 500);
-}
-    }
-  });
-}
+  }
+});
 })();
