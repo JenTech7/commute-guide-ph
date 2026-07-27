@@ -381,13 +381,25 @@
     els.guideDestinationName.textContent = destinationName;
   }
 
-  if (els.closeGuideBtn) {
-    els.closeGuideBtn.addEventListener('click', () => {
+if (els.closeGuideBtn) {
+  els.closeGuideBtn.addEventListener('click', () => {
+
+    if (els.guideContent) {
       els.guideContent.hidden = true;
+    }
+
+    if (els.guideEmptyState) {
       els.guideEmptyState.hidden = false;
+    }
+
+    if (els.guidePanel) {
       els.guidePanel.classList.remove('is-expanded');
-    });
-  }
+    }
+
+    document.body.classList.remove('guide-first');
+
+  });
+}
 
   /* ==================================================================
      6. RECENT SEARCHES (persisted in localStorage)
