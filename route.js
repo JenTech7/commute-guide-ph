@@ -401,19 +401,24 @@ const RouteGenerator = {
     const destinationName = detail.name || detail.destinationName || 'Selected Destination';
     const origin = getOrigin();
 
-    const generated = RouteGenerator.generate(origin, destination);
+const generated = RouteGenerator.generate(origin, destination);
 
-    currentTrip = {
-      destinationName: destinationName,
-      origin: origin,
-      destination: destination,
-      steps: generated.steps,
-      totalFare: generated.totalFare,
-      totalTimeMin: generated.totalTimeMin,
-      totalDistanceKm: generated.totalDistanceKm,
-      currentStepIndex: 0,
-      guideActive: false
-    };
+if (!generated) {
+  console.warn('[route.js] No route generated.');
+  return;
+}
+
+currentTrip = {
+  destinationName: destinationName,
+  origin: origin,
+  destination: destination,
+  steps: generated.steps,
+  totalFare: generated.totalFare,
+  totalTimeMin: generated.totalTimeMin,
+  totalDistanceKm: generated.totalDistanceKm,
+  currentStepIndex: 0,
+  guideActive: false
+};
 
     showGuideContent();
     renderAll();
