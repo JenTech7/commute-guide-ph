@@ -492,34 +492,34 @@ function startAutoGuide() {
 
 }
 
-
 function startAutoGuide() {
 
-    clearInterval(autoGuideTimer);
-  }
-
-  autoGuideTimer = setInterval(() => {
-
-    if (!currentTrip || !currentTrip.guideActive) {
+    if (autoGuideTimer) {
       clearInterval(autoGuideTimer);
-      return;
     }
 
+    autoGuideTimer = setInterval(() => {
 
-    if (currentTrip.currentStepIndex < currentTrip.steps.length - 1) {
+      if (!currentTrip || !currentTrip.guideActive) {
+        clearInterval(autoGuideTimer);
+        return;
+      }
 
-      nextStep();
 
-    } else {
+      if (currentTrip.currentStepIndex < currentTrip.steps.length - 1) {
 
-      clearInterval(autoGuideTimer);
+        nextStep();
 
-    }
+      } else {
 
-  }, 5000);
+        clearInterval(autoGuideTimer);
+
+      }
+
+    }, 5000);
 
 }
-  function nextStep() {
+    function nextStep() {
     if (!currentTrip || !currentTrip.guideActive) {
       console.warn('[route.js] nextStep() called before the guide was started.');
       return;
