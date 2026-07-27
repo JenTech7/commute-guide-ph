@@ -180,128 +180,48 @@
 
   // ===========================================================================
   // ROUTE GENERATOR (swap this module out later for Firestore-backed data)
-  // ===========================================================================
+// ===========================================================================
 
-  const RouteGenerator = {
-    /**
-     * Generates a single realistic PH commute route between origin and
-     * destination. Returns a plain object; no DOM access happens here.
-     */
-    generate: function (origin, destination) {
-      const totalDistanceKm = calculateDistanceKm(
-        origin.lat,
-        origin.lng,
-        destination.lat,
-        destination.lng
-      );
+const RouteGenerator = {
 
-      const steps = [];
+  generate: function (origin, destination) {
 
-      if (totalDistanceKm <= CONFIG.DIRECT_WALK_THRESHOLD_KM) {
-        // Short trip: just walk.
-        steps.push({
-          label: 'Walk to destination',
-          detail:
-            'Walk approximately ' +
-            totalDistanceKm.toFixed(1) +
-            ' km directly to your destination.',
-          durationMin: minutesForDistance(totalDistanceKm, CONFIG.WALK_SPEED_KMH),
-          distanceKm: totalDistanceKm,
-          fare: 0
-        });
-      } else {
-        const walkToTerminalKm = CONFIG.WALK_TO_TERMINAL_KM;
-        const walkToDestKm = CONFIG.WALK_TO_DESTINATION_KM;
-        const remainingKm = Math.max(
-          0.1,
-          totalDistanceKm - walkToTerminalKm - walkToDestKm
-        );
-
-        // Step: walk to terminal
-        steps.push({
-          label: 'Walk to jeepney terminal',
-          detail:
-            'Walk approximately ' +
-            walkToTerminalKm.toFixed(1) +
-            ' km to the nearest jeepney terminal.',
-          durationMin: minutesForDistance(walkToTerminalKm, CONFIG.WALK_SPEED_KMH),
-          distanceKm: walkToTerminalKm,
-          fare: 0
-        });
-
-        if (remainingKm <= CONFIG.JEEP_MAX_LEG_KM) {
-          // Single jeepney leg covers the rest of the distance.
-          steps.push({
-            label: 'Ride Jeepney',
-            detail:
-              'Ride a jeepney for approximately ' +
-              remainingKm.toFixed(1) +
-              ' km towards your destination.',
-            durationMin: minutesForDistance(remainingKm, CONFIG.JEEP_SPEED_KMH),
-            distanceKm: remainingKm,
-            fare: jeepneyFare(remainingKm)
-          });
-        } else {
-          // Jeepney leg + transfer + bus leg for the remainder.
-          const jeepLegKm = CONFIG.JEEP_MAX_LEG_KM - 1; // leave room for transfer
-          const busLegKm = Math.max(0.5, remainingKm - jeepLegKm);
-
-          steps.push({
-            label: 'Ride Jeepney',
-            detail:
-              'Ride a jeepney for approximately ' +
-              jeepLegKm.toFixed(1) +
-              ' km to the transfer point.',
-            durationMin: minutesForDistance(jeepLegKm, CONFIG.JEEP_SPEED_KMH),
-            distanceKm: jeepLegKm,
-            fare: jeepneyFare(jeepLegKm)
-          });
-
-          steps.push({
-            label: 'Transfer',
-            detail: 'Alight and transfer to a bus for the next leg of your trip.',
-            durationMin: CONFIG.TRANSFER_WAIT_MINUTES,
-            distanceKm: 0,
-            fare: 0
-          });
-
-          steps.push({
-            label: 'Ride Bus',
-            detail:
-              'Ride a bus for approximately ' +
-              busLegKm.toFixed(1) +
-              ' km towards your destination.',
-            durationMin: minutesForDistance(busLegKm, CONFIG.BUS_SPEED_KMH),
-            distanceKm: busLegKm,
-            fare: busFare(busLegKm)
-          });
-        }
-
-        // Step: walk to destination
-        steps.push({
-          label: 'Walk to destination',
-          detail:
-            'Walk approximately ' +
-            walkToDestKm.toFixed(1) +
-            ' km to reach your final destination.',
-          durationMin: minutesForDistance(walkToDestKm, CONFIG.WALK_SPEED_KMH),
-          distanceKm: walkToDestKm,
-          fare: 0
-        });
-      }
-
-      const totalFare = steps.reduce(function (sum, s) { return sum + s.fare; }, 0);
-      const totalTimeMin = steps.reduce(function (sum, s) { return sum + s.durationMin; }, 0);
-
-      return {
-        steps: steps,
-        totalFare: totalFare,
-        totalTimeMin: totalTimeMin,
-        totalDistanceKm: totalDistanceKm
-      };
+    if (!window.ROUTE_ENGINE) {
+      console.error("ROUTE_ENGINE not loaded.");
+      return null;
     }
-  };
 
+
+    const routes = window.ROUTE_ENGINE.searchRoutes(
+      origin,
+      destination
+    );
+
+
+    if (!routes || routes.length === 0) {
+      console.warn("No real transport routes found.");
+      return null;
+    }
+
+
+    const bestRoute = routes[0];
+
+
+    const steps = window.ROUTE_ENGINE.buildJourney(
+      bestRoute
+    );
+
+
+    return {
+      steps: steps,
+      totalFare: bestRoute.totalFare,
+      totalTimeMin: bestRoute.totalTimeMin,
+      totalDistanceKm: bestRoute.totalDistanceKm
+    };
+
+  }
+
+};
   // ===========================================================================
   // RENDERING
   // ===========================================================================
