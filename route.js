@@ -386,6 +386,7 @@ const RouteGenerator = {
   // ===========================================================================
 
   function handleDestinationSelected(evt) {
+    console.log("DESTINATION RECEIVED:", evt.detail);
     const detail = evt && evt.detail ? evt.detail : {};
 
     // Accept a couple of reasonable shapes for the destination payload.
