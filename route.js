@@ -431,7 +431,11 @@ currentTrip = {
   // PUBLIC API
   // ===========================================================================
 
-  function startGuide() {
+function startGuide() {
+
+    console.log("START GUIDE CLICKED");
+    console.log("CURRENT TRIP:", currentTrip);
+
     if (!currentTrip) {
       console.warn('[route.js] startGuide() called before a route was generated.');
       return;
