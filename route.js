@@ -440,13 +440,34 @@
     );
   }
 
-  function planJourneys() {
+function planJourneys() {
     if (!state.origin || !state.destination) return;
 
-    const routes = generateRoutes(state.origin, state.destination, new Date());
-    renderRouteOptions(routes, state.origin.label, state.destination.label);
+    const routes = generateRoutes(
+        state.origin,
+        state.destination,
+        new Date()
+    );
+
+    state.routes = routes;
+
+    // Automatically prepare first route for Start Guide button
+    if (routes.length > 0) {
+        state.currentTrip = {
+            route: routes[0],
+            steps: buildStepsFromRoute(routes[0]),
+            currentStepIndex: -1
+        };
+    }
+
+    renderRouteOptions(
+        routes,
+        state.origin.label,
+        state.destination.label
+    );
+
     showOptionsPanel();
-  }
+}
 
   /* ----------------------------------------------------------
      9. EVENT: cgph:destinationSelected
