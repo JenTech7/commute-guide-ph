@@ -431,30 +431,7 @@ currentTrip = {
   // PUBLIC API
   // ===========================================================================
 
-function startGuide() {
-
-    console.log("START GUIDE CLICKED");
-    console.log("CURRENT TRIP:", currentTrip);
-
-    if (!currentTrip) {
-      console.warn('[route.js] startGuide() called before a route was generated.');
-      return;
-    }
-    if (currentTrip.steps.length === 0) {
-      console.warn('[route.js] startGuide() called with an empty step list.');
-      return;
-    }
-
-    currentTrip.guideActive = true;
-    currentTrip.currentStepIndex = 0;
-
-    renderStepsList();
-    updateStepCards();
-    updateProgressBar();
-
-    dispatchGuideEvent('cgph:guideStarted');
-  }
-
+let autoGuideTimer = null;
 
 
 function startGuide() {
@@ -467,7 +444,7 @@ function startGuide() {
       return;
     }
 
-    if (currentTrip.steps.length === 0) {
+    if (!currentTrip.steps || currentTrip.steps.length === 0) {
       console.warn('[route.js] startGuide() called with an empty step list.');
       return;
     }
@@ -481,13 +458,43 @@ function startGuide() {
 
     dispatchGuideEvent('cgph:guideStarted');
 
+    // Start automatic step movement
     startAutoGuide();
 }
 
 
 function startAutoGuide() {
 
-  if (autoGuideTimer) {
+    if (autoGuideTimer) {
+      clearInterval(autoGuideTimer);
+    }
+
+    autoGuideTimer = setInterval(function () {
+
+      if (!currentTrip || !currentTrip.guideActive) {
+        clearInterval(autoGuideTimer);
+        return;
+      }
+
+
+      if (currentTrip.currentStepIndex < currentTrip.steps.length - 1) {
+
+        nextStep();
+
+      } else {
+
+        clearInterval(autoGuideTimer);
+
+      }
+
+
+    }, 5000);
+
+}
+
+
+function startAutoGuide() {
+
     clearInterval(autoGuideTimer);
   }
 
