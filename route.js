@@ -458,8 +458,6 @@ function startGuide() {
   let autoGuideTimer = null;
 
 
-let autoGuideTimer = null;
-
 
 function startGuide() {
 
