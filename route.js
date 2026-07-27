@@ -65,15 +65,9 @@
       lrt: { label: "LRT", icon: "🚈", speedKmh: 35, baseFare: 12, baseKm: 3, perKmFare: 1.3 }
     },
 
-    // Journey templates: each is a sequence of modes with distance
-    // weights (must sum to 1) describing how the total trip distance
-    // is split across legs. Multiple templates = multiple options
-    // with different trade-offs (fare vs. walking vs. transfers).
-   journeyTemplates: []
-      { modes: ["walk", "jeep", "walk"], weights: [0.07, 0.86, 0.07] },
-      { modes: ["walk", "jeep", "walk"], weights: [0.11, 0.78, 0.11] },
-      { modes: ["walk", "mjeep", "bus", "walk"], weights: [0.03, 0.22, 0.68, 0.07] }
-    ],
+    // Temporary empty.
+// Replaced by real transport network data.
+journeyTemplates: [],
 
     // Element IDs expected in home.html (see integration notes).
     ui: {
