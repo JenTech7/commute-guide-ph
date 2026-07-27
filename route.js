@@ -665,10 +665,21 @@ function wireStepGuideButtons() {
      12. INITIALIZATION
      ---------------------------------------------------------- */
 
-  function init() {
-    document.addEventListener("cgph:destinationSelected", handleDestinationSelected);
+function init() {
+    document.addEventListener(
+        "cgph:destinationSelected",
+        handleDestinationSelected
+    );
+
+    document.addEventListener(
+        "cgph:startGuide",
+        () => {
+            startGuide();
+        }
+    );
+
     wireStepGuideButtons();
-  }
+}
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
