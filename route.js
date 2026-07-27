@@ -323,24 +323,11 @@
 function startGuide() {
 
     if (!state.currentTrip) {
-
-        if (state.routes.length > 0) {
-
-            state.currentTrip = {
-                route: state.routes[0],
-                steps: buildStepsFromRoute(state.routes[0]),
-                currentStepIndex: -1
-            };
-
-        } else {
-            console.warn("No route selected");
-            return;
-        }
+        console.warn("[CGPH_ROUTE] No route selected.");
+        return;
     }
 
-
     state.currentTrip.currentStepIndex = -1;
-
 
     document.dispatchEvent(
         new CustomEvent("cgph:guideStarted", {
@@ -351,9 +338,8 @@ function startGuide() {
         })
     );
 
-
     nextStep();
-  }
+}
 
   function nextStep() {
     const trip = state.currentTrip;
