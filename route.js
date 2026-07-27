@@ -458,12 +458,42 @@ function startGuide() {
   let autoGuideTimer = null;
 
 
+let autoGuideTimer = null;
+
+
+function startGuide() {
+
+    console.log("START GUIDE CLICKED");
+    console.log("CURRENT TRIP:", currentTrip);
+
+    if (!currentTrip) {
+      console.warn('[route.js] startGuide() called before a route was generated.');
+      return;
+    }
+
+    if (currentTrip.steps.length === 0) {
+      console.warn('[route.js] startGuide() called with an empty step list.');
+      return;
+    }
+
+    currentTrip.guideActive = true;
+    currentTrip.currentStepIndex = 0;
+
+    renderStepsList();
+    updateStepCards();
+    updateProgressBar();
+
+    dispatchGuideEvent('cgph:guideStarted');
+
+    startAutoGuide();
+}
+
+
 function startAutoGuide() {
 
   if (autoGuideTimer) {
     clearInterval(autoGuideTimer);
   }
-
 
   autoGuideTimer = setInterval(() => {
 
@@ -473,10 +503,7 @@ function startAutoGuide() {
     }
 
 
-    if (
-      currentTrip.currentStepIndex <
-      currentTrip.steps.length - 1
-    ) {
+    if (currentTrip.currentStepIndex < currentTrip.steps.length - 1) {
 
       nextStep();
 
@@ -486,8 +513,7 @@ function startAutoGuide() {
 
     }
 
-
-  }, 5000); // every 5 seconds
+  }, 5000);
 
 }
   function nextStep() {
