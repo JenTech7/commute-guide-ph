@@ -403,6 +403,7 @@ const RouteGenerator = {
     const origin = getOrigin();
 
 const generated = RouteGenerator.generate(origin, destination);
+    console.log("GENERATED ROUTE:", generated);
 
 if (!generated) {
   console.warn('[route.js] No route generated.');
