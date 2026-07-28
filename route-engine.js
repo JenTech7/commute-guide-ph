@@ -282,6 +282,7 @@
    * }>}
    */
   function findNearestTransport(origin, destination) {
+    console.log("findNearestTransport() CALLED");
     const originPoint = normalizePoint(origin);
     const destPoint = normalizePoint(destination);
 
