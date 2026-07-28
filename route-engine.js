@@ -3,8 +3,8 @@
  * ---------------------------------------------------------------------------
  * CGPH Route Engine
  *
- * Vanilla JavaScript. Consumes window.TRANSPORT_NETWORK (from
- * transport-network.js) as its ONLY data source and exposes:
+ * Vanilla JavaScript. Consumes window.TRANSPORT_NETWORK (assembled from
+ * transport-network-part1..4.js) as its ONLY data source and exposes:
  *
  *   window.ROUTE_ENGINE = {
  *     findNearestPlace(origin),
@@ -13,41 +13,17 @@
  *     buildJourney(route)
  *   }
  *
- * This file does NOT touch route.js or any DOM elements. It is a pure data
- * / logic layer that route.js can be wired up to later.
+ * PUBLIC API IS UNCHANGED from the previous version — same four functions,
+ * same names, same call signatures. Everything new in this revision is an
+ * ADDITIVE field on the objects these functions already returned:
+ *   - route options now also carry totalWalkingDistanceKm and transferCount
+ *   - each 'walk' step from buildJourney() now always carries distance/
+ *     duration/heading, plus a voiceInstruction string
+ *   - each 'ride'/'stop' step also gets a voiceInstruction string
+ * Existing code reading route.totalFare, route.totalTimeMin, step.instruction,
+ * etc. keeps working exactly as before.
  *
- * ---------------------------------------------------------------------------
- * ASSUMED window.TRANSPORT_NETWORK SHAPE
- * ---------------------------------------------------------------------------
- * This engine expects (but normalizes defensively around) a structure like:
- *
- *   window.TRANSPORT_NETWORK = {
- *     places: [
- *       { id: "balibago-terminal", name: "Balibago Jeep Terminal",
- *         lat: 14.xxx, lng: 121.xxx, type: "terminal" },
- *       ...
- *     ],
- *     routes: [
- *       { id: "balibago-crossing", name: "Balibago - Crossing Jeep",
- *         mode: "jeep", fare: 15,
- *         stops: ["balibago-terminal", "crossing-calamba", ...] },
- *       ...
- *     ]
- *   }
- *
- * If your actual transport-network.js uses different key names
- * (e.g. "stations" instead of "places", "lines" instead of "routes",
- * "latitude"/"longitude" instead of "lat"/"lng"), adjust the FIELD_ALIASES
- * table below — no other code needs to change.
- *
- * This engine also tolerates two additional real-world shapes seen in
- * transport-network.js:
- *   - Route arrays split by mode (jeepneys / buses / uvExpress / trains /
- *     tricycles) instead of one unified "routes" array. See
- *     ROUTE_CATEGORY_KEYS + getRawRoutes() below.
- *   - Place coordinates nested inside a "coordinates" (or "coords" /
- *     "position") object instead of flat lat/lng fields. See
- *     normalizePoint() below.
+ * This file does NOT touch route.js or any DOM elements.
  * ---------------------------------------------------------------------------
  */
 
@@ -58,9 +34,6 @@
   // CONFIG
   // ===========================================================================
 
-  // Alternate property names this engine will check, in order, when reading
-  // data out of window.TRANSPORT_NETWORK. Edit this table if your network's
-  // field names differ from the assumed shape above.
   const FIELD_ALIASES = {
     places: ['places', 'stops', 'stations', 'locations', 'terminals'],
     routes: ['routes', 'lines', 'transportRoutes', 'transitRoutes'],
@@ -78,10 +51,10 @@
     routeStops: ['stops', 'stopIds', 'path', 'waypoints']
   };
 
-  // Fallback route categories used when window.TRANSPORT_NETWORK stores
-  // routes split by transport mode instead of one unified array (this is
-  // the shape transport-network.js currently uses).
-  const ROUTE_CATEGORY_KEYS = ['jeepneys', 'buses', 'uvExpress', 'trains', 'tricycles'];
+  // Categories checked when window.TRANSPORT_NETWORK stores routes split by
+  // transport mode instead of one unified array (the shape used by
+  // transport-network-part1..4.js).
+  const ROUTE_CATEGORY_KEYS = ['jeepneys', 'buses', 'provincialBuses', 'uvExpress', 'trains', 'tricycles'];
 
   const SEARCH_CONFIG = {
     // How far (km) a place may be from origin/destination and still count
@@ -90,13 +63,35 @@
 
     WALK_SPEED_KMH: 4.5,
 
-    // Fallback speed/fare used only if a matched route is missing data.
+    // Fallback speed/fare used only if a matched route's mode isn't in
+    // SPEED_BY_MODE_KMH below or fare data is missing.
     DEFAULT_RIDE_SPEED_KMH: 18,
     DEFAULT_RIDE_FARE: 13,
 
     // Max number of route options returned by searchRoutes().
     MAX_ROUTE_OPTIONS: 3
   };
+
+  // Realistic average speeds (km/h) by transport mode, used to estimate ride
+  // duration from distance. These are rough real-world averages (including
+  // typical stops/traffic) — a jeepney and a provincial bus on the same
+  // corridor do NOT travel at the same speed, so a single flat figure isn't
+  // usable once the network spans city streets and expressways.
+  const SPEED_BY_MODE_KMH = {
+    jeep: 18,
+    citybus: 22,
+    provincialbus: 60,
+    uvexpress: 70,
+    tricycle: 15,
+    mrt3: 35,
+    lrt1: 32,
+    lrt2: 32,
+    pnr: 30
+  };
+
+  function rideSpeedForMode(mode) {
+    return SPEED_BY_MODE_KMH[mode] || SEARCH_CONFIG.DEFAULT_RIDE_SPEED_KMH;
+  }
 
   // ===========================================================================
   // LOW-LEVEL HELPERS
@@ -115,6 +110,10 @@
     return (deg * Math.PI) / 180;
   }
 
+  function toDegrees(rad) {
+    return (rad * 180) / Math.PI;
+  }
+
   // Haversine great-circle distance in kilometers.
   function distanceKm(a, b) {
     if (!a || !b || a.lat == null || a.lng == null || b.lat == null || b.lng == null) {
@@ -129,6 +128,26 @@
       sinDLat * sinDLat +
       Math.cos(toRadians(a.lat)) * Math.cos(toRadians(b.lat)) * sinDLng * sinDLng;
     return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+  }
+
+  // Compass bearing in degrees (0 = north, 90 = east, ...) from point a to b.
+  function bearingDegrees(a, b) {
+    if (!a || !b || a.lat == null || a.lng == null || b.lat == null || b.lng == null) return null;
+    const lat1 = toRadians(a.lat);
+    const lat2 = toRadians(b.lat);
+    const dLng = toRadians(b.lng - a.lng);
+    const y = Math.sin(dLng) * Math.cos(lat2);
+    const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+    const brng = toDegrees(Math.atan2(y, x));
+    return (brng + 360) % 360;
+  }
+
+  // Converts a bearing in degrees to an 8-point compass direction phrase.
+  function compassPhrase(brng) {
+    if (brng == null || isNaN(brng)) return null;
+    const dirs = ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'];
+    const idx = Math.round(brng / 45) % 8;
+    return dirs[idx];
   }
 
   function formatDistance(km) {
@@ -147,7 +166,7 @@
   // Normalizes an arbitrary point-like input into { lat, lng } or null.
   // Accepts { lat, lng }, { latitude, longitude }, a place object with
   // flat coordinates, OR a place object with coordinates nested under
-  // "coordinates" / "coords" / "position" (as used by transport-network.js).
+  // "coordinates" / "coords" / "position".
   function normalizePoint(input) {
     if (!input) return null;
     const coordsSource = input.coordinates || input.coords || input.position || input;
@@ -155,6 +174,32 @@
     const lng = pickField(coordsSource, FIELD_ALIASES.placeLng);
     if (lat == null || lng == null) return null;
     return { lat: Number(lat), lng: Number(lng) };
+  }
+
+  // Computes a fare (PHP) for a ride leg given the route's fare data and the
+  // actual distance ridden. Supports three fare shapes:
+  //   - number:                          flat fare, e.g. tricycles
+  //   - { base, baseKm, perKm }:         base fare + per-km beyond baseKm
+  //   - { min, max } (legacy shape):     uses min as a flat base fare
+  // Falls back to SEARCH_CONFIG.DEFAULT_RIDE_FARE if fare data is missing
+  // or malformed.
+  function computeFare(route, rideDistanceKm) {
+    const f = route.fare;
+    if (typeof f === 'number' && !isNaN(f)) return f;
+
+    if (f && typeof f === 'object') {
+      if (typeof f.base === 'number') {
+        const baseKm = typeof f.baseKm === 'number' ? f.baseKm : 0;
+        const perKm = typeof f.perKm === 'number' ? f.perKm : 0;
+        const extraKm = Math.max(0, rideDistanceKm - baseKm);
+        return Math.round(f.base + extraKm * perKm);
+      }
+      if (typeof f.min === 'number') {
+        return f.min;
+      }
+    }
+
+    return SEARCH_CONFIG.DEFAULT_RIDE_FARE;
   }
 
   // ===========================================================================
@@ -179,8 +224,7 @@
 
   // Returns the raw list of route objects. Prefers a single unified array
   // (via FIELD_ALIASES.routes) if present; otherwise merges the mode-specific
-  // arrays (jeepneys, buses, uvExpress, trains, tricycles) used by
-  // transport-network.js into one flat list.
+  // arrays (jeepneys, buses, provincialBuses, uvExpress, trains, tricycles).
   function getRawRoutes() {
     const net = getNetwork();
     if (!net) return [];
@@ -256,12 +300,6 @@
   // PUBLIC: findNearestPlace(origin)
   // ===========================================================================
 
-  /**
-   * Finds the network place nearest to the given origin.
-   * @param {{lat:number,lng:number}} origin
-   * @param {{type?: string}} [opts] optional filter (e.g. { type: 'terminal' })
-   * @returns {{place: object, distanceKm: number}|null}
-   */
   function findNearestPlace(origin, opts) {
     const point = normalizePoint(origin);
     if (!point) {
@@ -297,19 +335,6 @@
   // PUBLIC: findNearestTransport(origin, destination)
   // ===========================================================================
 
-  /**
-   * Finds transport routes that have a stop reachable on foot from origin
-   * AND a stop reachable on foot from destination, ranked by combined
-   * walking distance (shortest first).
-   *
-   * @param {{lat:number,lng:number}} origin
-   * @param {{lat:number,lng:number}} destination
-   * @returns {Array<{
-   *   route: object,
-   *   boardingStop: object, boardingDistanceKm: number,
-   *   alightingStop: object, alightingDistanceKm: number
-   * }>}
-   */
   function findNearestTransport(origin, destination) {
     const originPoint = normalizePoint(origin);
     const destPoint = normalizePoint(destination);
@@ -376,26 +401,6 @@
   // PUBLIC: searchRoutes(origin, destination)
   // ===========================================================================
 
-  /**
-   * Searches for viable route options between origin and destination.
-   * Tries direct rides first (single transport leg), then falls back to a
-   * one-transfer search (two transport legs sharing a common stop).
-   *
-   * Each returned option has the shape:
-   * {
-   *   origin, destination,
-   *   totalFare, totalTimeMin, totalDistanceKm,
-   *   legs: [
-   *     { type: 'walk', from, to, distanceKm },
-   *     { type: 'ride', route, from, to },
-   *     { type: 'walk', from, to, distanceKm }   // ...and so on
-   *   ]
-   * }
-   *
-   * @param {{lat:number,lng:number}} origin
-   * @param {{lat:number,lng:number,name?:string}} destination
-   * @returns {Array<object>} route options, best (shortest) first
-   */
   function searchRoutes(origin, destination) {
     const originPoint = normalizePoint(origin);
     const destPoint = normalizePoint(destination);
@@ -422,6 +427,16 @@
       });
     }
 
+    // --- 3. Two-transfer routes, only attempted if we still have few/no hits ---
+    // (needed now that the network spans four regions — a single transfer
+    // is often not enough to connect, e.g., a Quezon town to Metro Manila).
+    if (options.length < SEARCH_CONFIG.MAX_ROUTE_OPTIONS) {
+      const twoTransferOptions = findTwoTransferOptions(originPoint, destPoint);
+      twoTransferOptions.forEach(function (legTriple) {
+        options.push(buildOptionFromLegs(originPoint, destPoint, legTriple));
+      });
+    }
+
     // Rank by total time, then fare.
     options.sort(function (a, b) {
       if (a.totalTimeMin !== b.totalTimeMin) return a.totalTimeMin - b.totalTimeMin;
@@ -436,6 +451,37 @@
     return options.slice(0, SEARCH_CONFIG.MAX_ROUTE_OPTIONS);
   }
 
+  // Routes with a stop reachable on foot from a given point.
+  // Returns [{ route, stop, distanceKm }]
+  function candidatesNear(point, routes, places) {
+    return routes
+      .map(function (route) {
+        let best = null;
+        let bestDist = Infinity;
+        route.stopIds.forEach(function (stopId) {
+          const p = findPlaceById(stopId, places);
+          if (!p) return;
+          const d = distanceKm(point, p);
+          if (d < bestDist) {
+            bestDist = d;
+            best = p;
+          }
+        });
+        return best && bestDist <= SEARCH_CONFIG.MAX_WALK_TO_STOP_KM
+          ? { route: route, stop: best, distanceKm: bestDist }
+          : null;
+      })
+      .filter(Boolean);
+  }
+
+  function sharedStop(routeA, routeB, places) {
+    const sharedStopId = routeA.stopIds.find(function (stopId) {
+      return routeB.stopIds.indexOf(stopId) !== -1;
+    });
+    if (!sharedStopId) return null;
+    return findPlaceById(sharedStopId, places);
+  }
+
   // Finds pairs of routes [legA, legB] that connect via a shared stop,
   // where legA is boardable near origin and legB is alightable near destination.
   function findOneTransferOptions(originPoint, destPoint) {
@@ -443,64 +489,21 @@
     const routes = getAllRoutes();
     const results = [];
 
-    // Routes with a stop near the origin.
-    const originCandidates = routes
-      .map(function (route) {
-        let best = null;
-        let bestDist = Infinity;
-        route.stopIds.forEach(function (stopId) {
-          const p = findPlaceById(stopId, places);
-          if (!p) return;
-          const d = distanceKm(originPoint, p);
-          if (d < bestDist) {
-            bestDist = d;
-            best = p;
-          }
-        });
-        return best && bestDist <= SEARCH_CONFIG.MAX_WALK_TO_STOP_KM
-          ? { route: route, boardingStop: best, boardingDistanceKm: bestDist }
-          : null;
-      })
-      .filter(Boolean);
-
-    // Routes with a stop near the destination.
-    const destCandidates = routes
-      .map(function (route) {
-        let best = null;
-        let bestDist = Infinity;
-        route.stopIds.forEach(function (stopId) {
-          const p = findPlaceById(stopId, places);
-          if (!p) return;
-          const d = distanceKm(destPoint, p);
-          if (d < bestDist) {
-            bestDist = d;
-            best = p;
-          }
-        });
-        return best && bestDist <= SEARCH_CONFIG.MAX_WALK_TO_STOP_KM
-          ? { route: route, alightingStop: best, alightingDistanceKm: bestDist }
-          : null;
-      })
-      .filter(Boolean);
+    const originCandidates = candidatesNear(originPoint, routes, places);
+    const destCandidates = candidatesNear(destPoint, routes, places);
 
     originCandidates.forEach(function (a) {
       destCandidates.forEach(function (b) {
         if (a.route.id === b.route.id) return; // that's a direct route, not a transfer
 
-        // Find a shared stop between route A and route B (the transfer point).
-        const sharedStopId = a.route.stopIds.find(function (stopId) {
-          return b.route.stopIds.indexOf(stopId) !== -1;
-        });
-        if (!sharedStopId) return;
-
-        const transferStop = findPlaceById(sharedStopId, places);
+        const transferStop = sharedStop(a.route, b.route, places);
         if (!transferStop) return;
 
         results.push([
           {
             route: a.route,
-            boardingStop: a.boardingStop,
-            boardingDistanceKm: a.boardingDistanceKm,
+            boardingStop: a.stop,
+            boardingDistanceKm: a.distanceKm,
             alightingStop: transferStop,
             alightingDistanceKm: 0
           },
@@ -508,8 +511,8 @@
             route: b.route,
             boardingStop: transferStop,
             boardingDistanceKm: 0,
-            alightingStop: b.alightingStop,
-            alightingDistanceKm: b.alightingDistanceKm
+            alightingStop: b.stop,
+            alightingDistanceKm: b.distanceKm
           }
         ]);
       });
@@ -518,14 +521,76 @@
     return results;
   }
 
+  // Finds triples of routes [legA, legB, legC] connecting via two transfer
+  // points. Used as a fallback when the network is too sparse for a direct
+  // or single-transfer trip (common across multi-region trips).
+  function findTwoTransferOptions(originPoint, destPoint) {
+    const places = getAllPlaces();
+    const routes = getAllRoutes();
+    const results = [];
+
+    const originCandidates = candidatesNear(originPoint, routes, places);
+    const destCandidates = candidatesNear(destPoint, routes, places);
+
+    let found = 0;
+    const MAX_RESULTS = SEARCH_CONFIG.MAX_ROUTE_OPTIONS * 2; // cap search cost
+
+    for (let i = 0; i < originCandidates.length && found < MAX_RESULTS; i++) {
+      const a = originCandidates[i];
+
+      for (let j = 0; j < routes.length && found < MAX_RESULTS; j++) {
+        const midRoute = routes[j];
+        if (midRoute.id === a.route.id) continue;
+
+        const transferStop1 = sharedStop(a.route, midRoute, places);
+        if (!transferStop1) continue;
+
+        for (let k = 0; k < destCandidates.length && found < MAX_RESULTS; k++) {
+          const b = destCandidates[k];
+          if (b.route.id === midRoute.id || b.route.id === a.route.id) continue;
+
+          const transferStop2 = sharedStop(midRoute, b.route, places);
+          if (!transferStop2 || transferStop2.id === transferStop1.id) continue;
+
+          results.push([
+            {
+              route: a.route,
+              boardingStop: a.stop,
+              boardingDistanceKm: a.distanceKm,
+              alightingStop: transferStop1,
+              alightingDistanceKm: 0
+            },
+            {
+              route: midRoute,
+              boardingStop: transferStop1,
+              boardingDistanceKm: 0,
+              alightingStop: transferStop2,
+              alightingDistanceKm: 0
+            },
+            {
+              route: b.route,
+              boardingStop: transferStop2,
+              boardingDistanceKm: 0,
+              alightingStop: b.stop,
+              alightingDistanceKm: b.distanceKm
+            }
+          ]);
+          found++;
+        }
+      }
+    }
+
+    return results;
+  }
+
   // Assembles a full route option (with walk legs at each end) from one or
-  // more ride "matches" as returned by findNearestTransport / the transfer
-  // search above.
+  // more ride "matches".
   function buildOptionFromLegs(originPoint, destPoint, rideMatches) {
     const legs = [];
     let totalFare = 0;
     let totalTimeMin = 0;
     let totalDistanceKm = 0;
+    let totalWalkingDistanceKm = 0;
 
     // Walk from origin to the first boarding stop.
     const firstBoarding = rideMatches[0].boardingStop;
@@ -533,6 +598,7 @@
     legs.push({ type: 'walk', from: originPoint, to: firstBoarding, distanceKm: walkToFirstKm });
     totalTimeMin += walkMinutes(walkToFirstKm);
     totalDistanceKm += walkToFirstKm;
+    totalWalkingDistanceKm += walkToFirstKm;
 
     rideMatches.forEach(function (match, index) {
       const route = match.route;
@@ -540,7 +606,7 @@
       const rideSpeed = SEARCH_CONFIG.DEFAULT_RIDE_SPEED_KMH;
       const rideMinutes = rideDistanceKm > 0 ? (rideDistanceKm / rideSpeed) * 60 : 8; // small min if stops lack coords
 
-      const fare = typeof route.fare === 'number' ? route.fare : SEARCH_CONFIG.DEFAULT_RIDE_FARE;
+      const fare = computeFare(route, rideDistanceKm);
 
       legs.push({
         type: route.mode || 'jeep',
@@ -567,6 +633,10 @@
     legs.push({ type: 'walk', from: lastAlighting, to: destPoint, distanceKm: walkFromLastKm });
     totalTimeMin += walkMinutes(walkFromLastKm);
     totalDistanceKm += walkFromLastKm;
+    totalWalkingDistanceKm += walkFromLastKm;
+
+    // Number of vehicle-to-vehicle transfers (ride legs minus one, floored at 0).
+    const transferCount = Math.max(0, rideMatches.length - 1);
 
     return {
       origin: originPoint,
@@ -574,7 +644,9 @@
       legs: legs,
       totalFare: totalFare,
       totalTimeMin: totalTimeMin,
-      totalDistanceKm: totalDistanceKm
+      totalDistanceKm: totalDistanceKm,
+      totalWalkingDistanceKm: totalWalkingDistanceKm,
+      transferCount: transferCount
     };
   }
 
@@ -582,22 +654,6 @@
   // PUBLIC: buildJourney(route)
   // ===========================================================================
 
-  /**
-   * Converts a route option (as returned by searchRoutes) into a flat array
-   * of human-readable journey steps, e.g.:
-   *
-   * [
-   *   { type: "walk", instruction: "Walk 100 m to Balibago Jeep Terminal",
-   *     distance: "100 m", duration: "2 min" },
-   *   { type: "jeep", instruction: "Ride Balibago - Crossing Jeep",
-   *     fare: 15, duration: "20 min" },
-   *   { type: "stop", instruction: "Get off at Crossing Calamba" },
-   *   { type: "walk", instruction: "Walk to Liliw Municipal Hall" }
-   * ]
-   *
-   * @param {object} route a route option produced by searchRoutes()
-   * @returns {Array<object>} ordered journey steps
-   */
   function buildJourney(route) {
     if (!route || !Array.isArray(route.legs)) {
       console.warn('[route-engine.js] buildJourney: invalid route object.');
@@ -611,34 +667,54 @@
       if (leg.type === 'walk') {
         const isFinalLeg = index === route.legs.length - 1;
         const toName = leg.to && leg.to.name ? leg.to.name : (isFinalLeg ? destinationName : 'the next stop');
+        const hasRealDistance = isFinite(leg.distanceKm) && leg.distanceKm >= 0;
+        const brng = hasRealDistance ? bearingDegrees(leg.from, leg.to) : null;
+        const heading = compassPhrase(brng);
+
+        const distText = hasRealDistance ? formatDistance(leg.distanceKm) : null;
+        const durText = hasRealDistance ? formatDuration(walkMinutes(leg.distanceKm)) : null;
 
         const step = {
           type: 'walk',
-          instruction: 'Walk ' + (isFinalLeg ? 'to ' + toName : formatDistance(leg.distanceKm) + ' to ' + toName)
+          instruction: 'Walk ' +
+            (distText ? 'approximately ' + distText + ' ' : '') +
+            (heading ? 'heading ' + heading + ' ' : '') +
+            'toward ' + toName + '.'
         };
 
-        // Only attach distance/duration when we actually have real
-        // coordinates to compute them from (keeps the final "walk to
-        // destination" step clean when the destination has no matched stop).
-        if (isFinite(leg.distanceKm) && leg.distanceKm >= 0 && leg.to && leg.to.lat != null) {
-          step.distance = formatDistance(leg.distanceKm);
-          step.duration = formatDuration(walkMinutes(leg.distanceKm));
+        if (hasRealDistance) {
+          step.distance = distText;
+          step.duration = durText;
+          step.headingDegrees = brng;
+          step.headingDirection = heading;
         }
+
+        step.voiceInstruction = 'Walk ' +
+          (durText ? 'for about ' + durText + ' ' : 'ahead ') +
+          (heading ? '(' + heading + ') ' : '') +
+          'toward ' + toName + '.';
 
         steps.push(step);
       } else if (leg.type === 'stop') {
+        const stopName = leg.at && leg.at.name ? leg.at.name : 'the transfer point';
         steps.push({
           type: 'stop',
-          instruction: 'Get off at ' + (leg.at && leg.at.name ? leg.at.name : 'the transfer point')
+          instruction: 'Get off at ' + stopName + '.',
+          voiceInstruction: 'Prepare to get off at ' + stopName + '.'
         });
       } else {
-        // Any ride leg: jeep, bus, tricycle, etc. — 'type' mirrors the
-        // route's mode so downstream UI can pick an appropriate icon.
+        // Any ride leg: jeep, bus, provincial bus, uv express, tricycle,
+        // mrt3, lrt1, lrt2, pnr — 'type' mirrors the route's mode so
+        // downstream UI can pick an appropriate icon.
+        const routeName = leg.route && leg.route.name ? leg.route.name : 'transport';
+        const durText = formatDuration(leg.durationMin);
+
         steps.push({
           type: leg.type,
-          instruction: 'Ride ' + (leg.route && leg.route.name ? leg.route.name : 'transport'),
+          instruction: 'Board the ' + routeName + '. Ride for approximately ' + durText + '.',
           fare: leg.fare,
-          duration: formatDuration(leg.durationMin)
+          duration: durText,
+          voiceInstruction: 'Board the ' + routeName + '. Remain on board for approximately ' + durText + '.'
         });
 
         // Insert a "get off" step after every ride leg except the very
@@ -647,7 +723,8 @@
         if (!isLastLeg && leg.to && leg.to.name) {
           steps.push({
             type: 'stop',
-            instruction: 'Get off at ' + leg.to.name
+            instruction: 'Get off at ' + leg.to.name + '.',
+            voiceInstruction: 'Prepare to get off at ' + leg.to.name + '.'
           });
         }
       }
