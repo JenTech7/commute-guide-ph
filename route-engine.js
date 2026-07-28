@@ -323,18 +323,22 @@
         bestBoarding.id !== bestAlighting.id &&
         bestBoardingDist <= SEARCH_CONFIG.MAX_WALK_TO_STOP_KM &&
         bestAlightingDist <= SEARCH_CONFIG.MAX_WALK_TO_STOP_KM;
+console.log(
+  "Route:", route.name,
+  "| Boarding:", bestBoardingDist,
+  "| Alighting:", bestAlightingDist,
+  "| Limit:", SEARCH_CONFIG.MAX_WALK_TO_STOP_KM
+);
 
-      if (withinWalkRange) {
-        matches.push({
-          route: route,
-          boardingStop: bestBoarding,
-          boardingDistanceKm: bestBoardingDist,
-          alightingStop: bestAlighting,
-          alightingDistanceKm: bestAlightingDist
-        });
-      }
-    });
-
+if (withinWalkRange) {
+  matches.push({
+    route: route,
+    boardingStop: bestBoarding,
+    boardingDistanceKm: bestBoardingDist,
+    alightingStop: bestAlighting,
+    alightingDistanceKm: bestAlightingDist
+  });
+}
     matches.sort(function (a, b) {
       return (a.boardingDistanceKm + a.alightingDistanceKm) -
              (b.boardingDistanceKm + b.alightingDistanceKm);
