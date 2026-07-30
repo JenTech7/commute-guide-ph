@@ -719,16 +719,6 @@
 
         // Insert a "get off" step after every ride leg except the very
         // last leg (the final walk step already conveys arrival).
-        const isLastLeg = index === route.legs.length - 1;
-        if (!isLastLeg && leg.to && leg.to.name) {
-          steps.push({
-            type: 'stop',
-            instruction: 'Get off at ' + leg.to.name + '.',
-            voiceInstruction: 'Prepare to get off at ' + leg.to.name + '.'
-          });
-        }
-      }
-    });
 
     return steps;
   }
