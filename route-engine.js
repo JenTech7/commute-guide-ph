@@ -696,6 +696,14 @@
           'toward ' + toName + '.';
 
         steps.push(step);
+        // If this was the final walk, show arrival.
+if (isFinalLeg) {
+    steps.push({
+        type: 'arrival',
+        instruction: '🎉 You have arrived at your destination.',
+        voiceInstruction: 'You have arrived at your destination.'
+    });
+}
       } else if (leg.type === 'stop') {
         const stopName = leg.at && leg.at.name ? leg.at.name : 'the transfer point';
         steps.push({
