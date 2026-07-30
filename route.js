@@ -307,14 +307,14 @@ const RouteGenerator = {
 
     if (dom.currentStepText) {
       dom.currentStepText.textContent = current
-        ? current.label + ' — ' + current.detail
-        : 'Guide not started yet.';
+    ? current.instruction
+    : 'Guide not started yet.';
     }
 
     if (dom.nextStepText) {
       dom.nextStepText.textContent = next
-        ? next.label
-        : (currentTrip.guideActive ? 'This is the last step.' : '—');
+    ? next.instruction
+    : (currentTrip.guideActive ? 'This is the last step.' : '—');
     }
 
     if (dom.currentStepCard) {
