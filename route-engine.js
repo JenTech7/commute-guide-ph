@@ -674,13 +674,14 @@
         const distText = hasRealDistance ? formatDistance(leg.distanceKm) : null;
         const durText = hasRealDistance ? formatDuration(walkMinutes(leg.distanceKm)) : null;
 
-        const step = {
-          type: 'walk',
-          instruction: 'Walk ' +
-            (distText ? 'approximately ' + distText + ' ' : '') +
-            (heading ? 'heading ' + heading + ' ' : '') +
-            'toward ' + toName + '.'
-        };
+   const step = {
+    type: 'walk',
+    instruction: isFinalLeg
+        ? '🚶 Walk ' + distText + ' to your destination.'
+        : '🚶 Walk ' +
+          (distText ? distText + ' ' : '') +
+          'to ' + toName + '.'
+};
 
         if (hasRealDistance) {
           step.distance = distText;
