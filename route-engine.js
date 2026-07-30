@@ -711,35 +711,47 @@ if (isFinalLeg) {
           instruction: 'Get off at ' + stopName + '.',
           voiceInstruction: 'Prepare to get off at ' + stopName + '.'
         });
-      } else {
-        // Any ride leg: jeep, bus, provincial bus, uv express, tricycle,
-        // mrt3, lrt1, lrt2, pnr — 'type' mirrors the route's mode so
-        // downstream UI can pick an appropriate icon.
-        const routeName = leg.route && leg.route.name ? leg.route.name : 'transport';
-        const durText = formatDuration(leg.durationMin);
+     } else {
 
+    // Ride step
+    const routeName = leg.route && leg.route.name
+        ? leg.route.name
+        : 'transport';
+
+    const durText = formatDuration(leg.durationMin);
+
+    steps.push({
+        type: leg.type,
+        instruction: 'Board the ' + routeName + '. Ride for approximately ' + durText + '.',
+        fare: leg.fare,
+        duration: durText,
+        voiceInstruction: 'Board the ' + routeName + '. Remain on board for approximately ' + durText + '.'
+    });
+
+    // Get off
+    if (leg.to && leg.to.name) {
         steps.push({
-          type: leg.type,
-          instruction: 'Board the ' + routeName + '. Ride for approximately ' + durText + '.',
-          fare: leg.fare,
-          duration: durText,
-          voiceInstruction: 'Board the ' + routeName + '. Remain on board for approximately ' + durText + '.'
+            type: 'stop',
+            instruction: 'Get off at ' + leg.to.name + '.',
+            voiceInstruction: 'Prepare to get off at ' + leg.to.name + '.'
         });
+    }
+}
 
-        // Insert a "get off" step after every ride leg except the very
-        // last leg (the final walk step already conveys arrival).
+}); // End route.legs.forEach()
 
-    return steps;
-  }
+return steps;
+}
 
   // ===========================================================================
   // PUBLIC API EXPORT
   // ===========================================================================
 
-  window.ROUTE_ENGINE = {
-    findNearestPlace: findNearestPlace,
-    findNearestTransport: findNearestTransport,
-    searchRoutes: searchRoutes,
-    buildJourney: buildJourney
-  };
+window.ROUTE_ENGINE = {
+  findNearestPlace: findNearestPlace,
+  findNearestTransport: findNearestTransport,
+  searchRoutes: searchRoutes,
+  buildJourney: buildJourney
+};
+
 })();
