@@ -247,13 +247,20 @@ const RouteGenerator = {
       li.className = 'route-step-item';
       li.setAttribute('data-step-index', String(index));
 
-      const label = document.createElement('span');
-      label.className = 'route-step-label';
-      label.textContent = step.label;
+    const label = document.createElement('span');
+    label.className = 'route-step-label';
+    label.textContent = step.instruction || '';
 
-      const detail = document.createElement('span');
-      detail.className = 'route-step-detail';
-      detail.textContent = step.detail;
+   const detail = document.createElement('span');
+   detail.className = 'route-step-detail';
+
+   const meta = [];
+
+   if (step.distance) meta.push(step.distance);
+   if (step.duration) meta.push(step.duration);
+   if (step.fare) meta.push('₱' + step.fare);
+
+   detail.textContent = meta.join(' • ');
 
       li.appendChild(label);
       li.appendChild(detail);
