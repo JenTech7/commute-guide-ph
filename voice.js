@@ -196,9 +196,8 @@
       refreshVoices();
     }
 
-    state.pendingUtterance = utterance;
-    synth.speak(utterance);
-  }
+state.pendingUtterance = utterance;
+
 utterance.onend = function () {
 
     if (
@@ -215,6 +214,10 @@ utterance.onend = function () {
     }
 
 };
+
+synth.speak(utterance);
+
+} // <-- end of speak()
   /* ----------------------------------------------------------
      7. ENABLE / DISABLE / TOGGLE
      ---------------------------------------------------------- */
