@@ -501,20 +501,6 @@ function startAutoGuide() {
 
 }
 
-function startAutoGuide() {
-
-    if (autoGuideTimer) {
-      clearInterval(autoGuideTimer);
-    }
-
-    autoGuideTimer = setInterval(() => {
-
-      if (!currentTrip || !currentTrip.guideActive) {
-        clearInterval(autoGuideTimer);
-        return;
-      }
-
-
       if (currentTrip.currentStepIndex < currentTrip.steps.length - 1) {
 
         nextStep();
