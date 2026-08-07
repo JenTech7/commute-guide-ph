@@ -677,8 +677,8 @@
    const step = {
     type: 'walk',
     instruction: isFinalLeg
-        ? '🚶 Walk ' + distText + ' to your destination.'
-        : '🚶 Walk ' +
+        ? ' Walk ' + distText + ' to your destination.'
+        : ' Walk ' +
           (distText ? distText + ' ' : '') +
           'to ' + toName + '.'
 };
@@ -700,7 +700,7 @@
 if (isFinalLeg) {
     steps.push({
         type: 'arrival',
-        instruction: '🎉 You have arrived at your destination.',
+        instruction: ' You have arrived at your destination.',
         voiceInstruction: 'You have arrived at your destination.'
     });
 }
