@@ -474,71 +474,55 @@ function startGuide() {
 
 function startAutoGuide() {
 
-    if (autoGuideTimer) {
-      clearInterval(autoGuideTimer);
-    }
-
-    autoGuideTimer = setInterval(function () {
-
-      if (!currentTrip || !currentTrip.guideActive) {
-        clearInterval(autoGuideTimer);
-        return;
-      }
-
-
-      if (currentTrip.currentStepIndex < currentTrip.steps.length - 1) {
-
-        nextStep();
-
-      } else {
-
-        clearInterval(autoGuideTimer);
-
-      }
-
-
-    }, 5000);
-
-}
-
-      if (currentTrip.currentStepIndex < currentTrip.steps.length - 1) {
-
-        nextStep();
-
-      } else {
-
-        clearInterval(autoGuideTimer);
-
-      }
-
-    }, 5000);
-
-}
-    function nextStep() {
-    if (!currentTrip || !currentTrip.guideActive) {
-      console.warn('[route.js] nextStep() called before the guide was started.');
-      return;
-    }
-
-    const isLastStep = currentTrip.currentStepIndex >= currentTrip.steps.length - 1;
-
-    if (isLastStep) {
-      dispatchGuideEvent('cgph:guideFinished');
-      currentTrip.guideActive = false;
-      updateStepListHighlighting();
-      updateProgressBar();
-      return;
-    }
-
-    currentTrip.currentStepIndex += 1;
-
-    updateStepListHighlighting();
-    updateStepCards();
-    updateProgressBar();
-
-    dispatchGuideEvent('cgph:stepChanged');
+  if (autoGuideTimer) {
+    clearInterval(autoGuideTimer);
   }
 
+  autoGuideTimer = setInterval(function () {
+
+    if (!currentTrip || !currentTrip.guideActive) {
+      clearInterval(autoGuideTimer);
+      return;
+    }
+
+    if (currentTrip.currentStepIndex < currentTrip.steps.length - 1) {
+
+      nextStep();
+
+    } else {
+
+      clearInterval(autoGuideTimer);
+
+    }
+
+  }, 5000);
+
+} // <-- end of startAutoGuide()
+
+function nextStep() {
+  if (!currentTrip || !currentTrip.guideActive) {
+    console.warn('[route.js] nextStep() called before the guide was started.');
+    return;
+  }
+
+  const isLastStep = currentTrip.currentStepIndex >= currentTrip.steps.length - 1;
+
+  if (isLastStep) {
+    dispatchGuideEvent('cgph:guideFinished');
+    currentTrip.guideActive = false;
+    updateStepListHighlighting();
+    updateProgressBar();
+    return;
+  }
+
+  currentTrip.currentStepIndex += 1;
+
+  updateStepListHighlighting();
+  updateStepCards();
+  updateProgressBar();
+
+  dispatchGuideEvent('cgph:stepChanged');
+}
   function getCurrentTrip() {
     if (!currentTrip) return null;
 
