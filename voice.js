@@ -199,7 +199,22 @@
     state.pendingUtterance = utterance;
     synth.speak(utterance);
   }
+utterance.onend = function () {
 
+    if (
+        window.CGPH_ROUTE &&
+        window.CGPH_ROUTE.getCurrentTrip()
+    ) {
+
+        const trip = window.CGPH_ROUTE.getCurrentTrip();
+
+        if (trip.guideActive) {
+            window.CGPH_ROUTE.nextStep();
+        }
+
+    }
+
+};
   /* ----------------------------------------------------------
      7. ENABLE / DISABLE / TOGGLE
      ---------------------------------------------------------- */
