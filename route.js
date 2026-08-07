@@ -467,37 +467,6 @@ function startGuide() {
 
     dispatchGuideEvent('cgph:guideStarted');
 
-    // Start automatic step movement
-    startAutoGuide();
-}
-
-
-function startAutoGuide() {
-
-  if (autoGuideTimer) {
-    clearInterval(autoGuideTimer);
-  }
-
-  autoGuideTimer = setInterval(function () {
-
-    if (!currentTrip || !currentTrip.guideActive) {
-      clearInterval(autoGuideTimer);
-      return;
-    }
-
-    if (currentTrip.currentStepIndex < currentTrip.steps.length - 1) {
-
-      nextStep();
-
-    } else {
-
-      clearInterval(autoGuideTimer);
-
-    }
-
-  }, 5000);
-
-} // <-- end of startAutoGuide()
 
 function nextStep() {
   if (!currentTrip || !currentTrip.guideActive) {
